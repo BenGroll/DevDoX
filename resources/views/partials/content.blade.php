@@ -24,7 +24,7 @@
                             'version' => $version->version_number,
                             'docPath' => $child->path,
                         ]) }}">
-                            @if ($child->type === 'folder') 📁 @else 📄 @endif
+                            @if ($child->type === 'folder') > @else # @endif
                             {{ $child->title }}
                         </a>
                     </li>

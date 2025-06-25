@@ -6,7 +6,7 @@
     ]) }}"
        class="block px-2 py-1 rounded hover:bg-gray-200 transition
               @if (isset($currentNode) && $currentNode->id === $node->id) bg-blue-100 font-semibold @endif">
-        @if ($node->type === 'folder') 📁 @else 📄 @endif
+        @if ($node->type === 'folder') > @else # @endif
         {{ $node->title }}
     </a>
 
