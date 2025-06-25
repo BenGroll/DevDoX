@@ -16,7 +16,7 @@ function buildTree($nodes, $parentId = null, $depth = 0)
 
 Route::get('/{section}/{version}/{any?}', function ($section, $version, $any = null) {
     $section = Section::where('slug', $section)->firstOrFail();
-    $sections = Section::with('versions')->get();
+    $sections = Section::with(['children.versions', 'versions'])->whereNull('parent_id')->get();
     $version = $section->versions()->where('version_number', $version)->firstOrFail();
 
     $allNodes = $version->nodes()->with('children', 'document', 'version.section')->get();

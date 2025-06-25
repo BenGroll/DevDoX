@@ -12,32 +12,6 @@ use Illuminate\Support\Str;
 
 class DocumentationSeeder extends Seeder
 {
-    public function run()
-    {
-        $structure = [
-            'Core' => ['13.7', '13.6', '13.0'],
-            'Core-Plugin[Statistics]' => ['2', '1.1', '1'],
-            'Custom-Plugin[Budgets]' => ['2', '1.1', '1'],
-            'Portv2' => ['2', '1.1', '1'],
-        ];
-
-        foreach ($structure as $sectionName => $versions) {
-            $section = Section::create([
-                'name' => $sectionName,
-                'slug' => Str::slug($sectionName),
-            ]);
-
-            foreach ($versions as $versionNumber) {
-                $version = Version::create([
-                    'section_id' => $section->id,
-                    'version_number' => $versionNumber,
-                ]);
-
-                $this->createNodeTree($version);
-            }
-        }
-    }
-
     private function createNodeTree(Version $version)
     {
         // Root "General"
@@ -60,8 +34,10 @@ class DocumentationSeeder extends Seeder
             'type' => 'folder',
         ]);
 
-        // Determine document type by version_number
-        $docType = str_starts_with($version->version_number, '13.0') || $version->version_number === '2' || $version->version_number === '1'
+        // Document type based on version number
+        $docType = str_starts_with($version->version_number, '13.0') ||
+                   $version->version_number === '2' ||
+                   $version->version_number === '1'
             ? 'Major'
             : 'Minor';
 
@@ -81,7 +57,7 @@ class DocumentationSeeder extends Seeder
             'content' => "# {$docType} Changelog\n\nDetails for version {$version->version_number}.",
         ]);
 
-        // Installation
+        // Installation folder
         Node::create([
             'version_id' => $version->id,
             'parent_id' => $general->id,
@@ -91,4 +67,54 @@ class DocumentationSeeder extends Seeder
             'type' => 'folder',
         ]);
     }
+    
+    public function run() {
+        $structure = [
+            'Custom-Plugins' => [
+                'Budgets' => ['1', '2'],
+                'Invoices' => ['1'],
+            ],
+            'Core-Plugins' => [
+                'Statistics' => ['1', '2'],
+            ],
+            'Core' => ['13.7', '13.6'],
+            'Port' => ['1', '2'],
+        ];
+
+        foreach ($structure as $sectionName => $content) {
+            $section = Section::create([
+                'name' => $sectionName,
+                'slug' => Str::slug($sectionName),
+            ]);
+
+            if (is_array($content) && is_string(array_key_first($content))) {
+                // Plugin container: content is plugin => [versions]
+                foreach ($content as $pluginName => $pluginVersions) {
+                    $plugin = Section::create([
+                        'name' => $pluginName,
+                        'slug' => Str::slug($pluginName),
+                        'parent_id' => $section->id,
+                    ]);
+
+                    foreach ($pluginVersions as $versionNumber) {
+                        $version = Version::create([
+                            'section_id' => $plugin->id,
+                            'version_number' => $versionNumber,
+                        ]);
+                        $this->createNodeTree($version);
+                    }
+                }
+            } else {
+                // Flat section like Core/Port
+                foreach ($content as $versionNumber) {
+                    $version = Version::create([
+                        'section_id' => $section->id,
+                        'version_number' => $versionNumber,
+                    ]);
+                    $this->createNodeTree($version);
+                }
+            }
+        }
+    }
+
 }
