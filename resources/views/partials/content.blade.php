@@ -1,31 +1,25 @@
-@if ($currentNode?->type === 'document')
-    <article class="prose max-w-none">
-        {!! \Illuminate\Support\Str::markdown($currentNode->document->content ?? '') !!}
+@if ($currentNode && $currentNode->type === 'document' && $currentNode->document)
+    <article class="prose max-w-full">
+        {!! \Illuminate\Support\Str::markdown($currentNode->document->content) !!}
     </article>
-
-@elseif ($currentNode?->type === 'folder')
-    <h2 class="text-xl font-semibold mb-4">{{ $currentNode->title }}</h2>
-
-    @if ($children->isEmpty())
-        <p class="text-gray-500">This folder has no entries yet.</p>
-    @else
-        <ul class="space-y-2">
+@elseif ($currentNode && $currentNode->type === 'folder')
+    <div class="space-y-2">
+        <h2 class="text-xl font-semibold mb-4">Contents of "{{ $currentNode->title }}"</h2>
+        <ul>
             @foreach ($children as $child)
                 <li>
-                    <a href="{{ route('docs', [
-                        'sectionSlug' => $child->version->section->path,
-                        'version' => $child->version->version_number,
-                        'docPath' => $child->path
-                        ]) }}"
-                    class="text-blue-600 hover:underline">
+                    <a class="text-blue-600 hover:underline" href="{{ route('docs', [
+                        'sectionSlug' => urlencode($version->section->slug),
+                        'version' => $version->version_number,
+                        'docPath' => $child->path,
+                    ]) }}">
                         @if ($child->type === 'folder') 📁 @else 📄 @endif
                         {{ $child->title }}
                     </a>
                 </li>
             @endforeach
         </ul>
-    @endif
-
+    </div>
 @else
-    <p class="text-gray-500">No content selected.</p>
+    <p class="text-gray-500 italic">Select a document to begin.</p>
 @endif
