@@ -31,8 +31,8 @@
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 p-6 overflow-y-auto">
-                @include('partials.content')
+            <main class="flex-1 p-6 overflow-y-auto" id="content-viewer">
+                @yield('content')
             </main>
         </div>
     </div>
