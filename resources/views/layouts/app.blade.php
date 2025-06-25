@@ -11,11 +11,16 @@
     <div id="app" class="h-screen flex flex-col">
         <!-- Top Bar -->
         <header class="flex items-center justify-between px-4 py-2 border-b bg-gray-100">
-            <div class="flex gap-4 items-center">
-                <span class="font-bold text-lg">DevDox</span>
+            <!-- Left: DevDox button + Search -->
+            <div class="flex items-center gap-4">
+                <a href="/" class="font-bold text-lg text-blue-600 hover:underline">DevDox</a>
+                @include('partials.search')
+            </div>
+
+            <!-- Right: Version picker -->
+            <div class="flex items-center">
                 @include('partials.version_picker')
             </div>
-            @include('partials.search')
         </header>
 
         <!-- Main Layout -->

@@ -9,6 +9,7 @@
                 @selected($sec->id === $section->id || optional($section->parent)->id === $sec->id)>
                 {{ $sec->name }}
             </option>
+
         @endforeach
     </select>
 
@@ -25,47 +26,53 @@
 </div>
 
 <script>
-    const sectionSelect = document.getElementById('section-select');
-    const childSelect = document.getElementById('child-select');
-    const versionSelect = document.getElementById('version-select');
+const sectionSelect = document.getElementById('section-select');
+const childSelect = document.getElementById('child-select');
+const versionSelect = document.getElementById('version-select');
 
-    // Initial load
-    updateVersionSelector();
+// Initial load
+updateVersionSelector(true);
 
-    sectionSelect.addEventListener('change', updateVersionSelector);
-    childSelect.addEventListener('change', updateVersionList);
+sectionSelect.addEventListener('change', updateVersionSelector);
+childSelect.addEventListener('change', updateVersionList);
 
-    function updateVersionSelector() {
-        const selected = sectionSelect.options[sectionSelect.selectedIndex];
-        const isGroup = selected.dataset.isGroup === '1';
+function updateVersionSelector(initial = false) {
+    const selected = sectionSelect.options[sectionSelect.selectedIndex];
+    const isGroup = selected.dataset.isGroup === '1';
 
-        versionSelect.innerHTML = '';
-        childSelect.innerHTML = '';
-        childSelect.classList.toggle('hidden', !isGroup);
+    versionSelect.innerHTML = '';
+    childSelect.innerHTML = '';
+    childSelect.classList.toggle('hidden', !isGroup);
 
-        if (isGroup) {
-            const children = JSON.parse(selected.dataset.children || '{}');
-            Object.keys(children).forEach(slug => {
-                const option = document.createElement('option');
-                option.value = slug;
-                option.textContent = slug;
-                childSelect.appendChild(option);
-            });
+    if (isGroup) {
+        const children = JSON.parse(selected.dataset.children || '{}');
+        const currentSlug = "{{ $section->slug }}";
+        const currentVersion = "{{ $version->version_number }}";
 
-            // Trigger version list update for first child
-            updateVersionList();
-        } else {
-            const versions = JSON.parse(selected.dataset.versions || '[]');
-            versions.forEach(v => {
-                const option = document.createElement('option');
-                option.value = v;
-                option.textContent = v;
-                versionSelect.appendChild(option);
-            });
-        }
+        Object.keys(children).forEach(slug => {
+            const option = document.createElement('option');
+            option.value = slug;
+            option.textContent = slug;
+            if (initial && slug === currentSlug) option.selected = true;
+            childSelect.appendChild(option);
+        });
+
+        updateVersionList(currentVersion);
+    } else {
+        const versions = JSON.parse(selected.dataset.versions || '[]');
+        const currentVersion = "{{ $version->version_number }}";
+
+        versions.forEach(v => {
+            const option = document.createElement('option');
+            option.value = v;
+            option.textContent = v;
+            if (initial && v === currentVersion) option.selected = true;
+            versionSelect.appendChild(option);
+        });
     }
+}
 
-    function updateVersionList() {
+    function updateVersionList(selectedVersion = null) {
         const parent = sectionSelect.options[sectionSelect.selectedIndex];
         const children = JSON.parse(parent.dataset.children || '{}');
         const selectedChild = childSelect.value;
@@ -76,6 +83,7 @@
             const option = document.createElement('option');
             option.value = v;
             option.textContent = v;
+            if (v === selectedVersion) option.selected = true;
             versionSelect.appendChild(option);
         });
     }
