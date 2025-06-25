@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\Section;
 use App\Models\Node;
+use Illuminate\Http\Request;
+use App\Models\Document;
+use Illuminate\Support\Str; 
 
 function buildTree($nodes, $parentId = null, $depth = 0)
 {
@@ -160,3 +163,25 @@ Route::get('/{sectionSlug}/{version}/{docPath?}', function ($sectionSlug, $versi
     ));
 })->where('docPath', '.*')->name('docs');
 
+Route::get('/search', function (Request $request) {
+    $query = $request->input('q');
+    $sectionSlug = $request->input('section');
+    $versionNumber = $request->input('version');
+
+    $section = Section::where('slug', $sectionSlug)->firstOrFail();
+    $version = $section->versions()->where('version_number', $versionNumber)->firstOrFail();
+
+    $sections = Section::with(['children.versions', 'versions'])->whereNull('parent_id')->get();
+    $allNodes = $version->nodes()->with('document')->get();
+    $tree = buildTree($version->nodes()->with('children', 'version.section')->get());
+
+    $results = $allNodes
+        ->filter(fn ($node) =>
+            $node->document &&
+            str_contains(strtolower($node->document->content), strtolower($query))
+        );
+
+    return view('partials.search.results', compact(
+        'sections', 'section', 'version', 'tree', 'results', 'query'
+    ));
+})->name('docs.search');

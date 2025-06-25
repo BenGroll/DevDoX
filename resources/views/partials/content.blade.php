@@ -1,48 +1,70 @@
 @extends('layouts.app')
 
 @section('content')
-    @if ($currentNode && $currentNode->type === 'document' && $currentNode->document)
-        <div class="text-right mb-2" style="align-items: center">
-            <a href="{{ route('docs.edit', [
-                'sectionSlug' => $section->slug,
-                'version' => $version->version_number,
-                'docPath' => $currentNode->path
-            ]) }}"
-            class="text-xl text-blue-600 hover:underline">Edit</a>
-            <a href="{{ route('docs.download', [
-                'sectionSlug' => $section->slug,
-                'version' => $version->version_number,
-                'docPath' => $currentNode->path
-            ]) }}"
-            class="text-xl text-grey-600 hover:underline">⤓ Download </a>
-        <!-- Delete Button -->
-        <button onclick="openDeleteModal()" class="text-xl text-red-600 hover:underline">X Delete</button>
-        </div>
-        <article class="prose max-w-full">
-            {!! \Illuminate\Support\Str::markdown($currentNode->document->content) !!}
-        </article>
-    @elseif ($currentNode && $currentNode->type === 'folder')
+
+    @if (isset($matches) && $matches->isNotEmpty())
         <div class="space-y-2">
-            <h2 class="text-xl font-semibold mb-4">Contents of "{{ $currentNode->title }}"</h2>
-            <ul>
-                @foreach ($children as $child)
+            <h2 class="text-xl font-semibold mb-4">🔍 Search Results for "{{ $query }}"</h2>
+            <ul class="space-y-1">
+                @foreach ($matches as $match)
                     <li>
-                        <a class="text-blue-600 hover:underline" href="{{ route('docs', [
-                            'sectionSlug' => urlencode($version->section->slug),
-                            'version' => $version->version_number,
-                            'docPath' => $child->path,
-                        ]) }}">
-                            @if ($child->type === 'folder') > @else # @endif
-                            {{ $child->title }}
+                        <a href="{{ route('docs', [
+                            'sectionSlug' => $match->node->version->section->slug,
+                            'version' => $match->node->version->version_number,
+                            'docPath' => $match->node->path,
+                        ]) }}" class="text-blue-600 hover:underline">
+                            📄 {{ $match->node->title }} 
+                            <span class="text-xs text-gray-500">[{{ $match->node->version->section->name }} v{{ $match->node->version->version_number }}]</span>
                         </a>
                     </li>
                 @endforeach
             </ul>
         </div>
+    @elseif (isset($matches))
+        <p class="italic text-gray-500">No results found for "{{ $query }}".</p>
     @else
-        <p class="text-gray-500 italic">Select a document to begin.</p>
+        @if ($currentNode && $currentNode->type === 'document' && $currentNode->document)
+            <div class="text-right mb-2" style="align-items: center">
+                <a href="{{ route('docs.edit', [
+                    'sectionSlug' => $section->slug,
+                    'version' => $version->version_number,
+                    'docPath' => $currentNode->path
+                ]) }}"
+                class="text-xl text-blue-600 hover:underline">Edit</a>
+                <a href="{{ route('docs.download', [
+                    'sectionSlug' => $section->slug,
+                    'version' => $version->version_number,
+                    'docPath' => $currentNode->path
+                ]) }}"
+                class="text-xl text-grey-600 hover:underline">⤓ Download </a>
+            <!-- Delete Button -->
+            <button onclick="openDeleteModal()" class="text-xl text-red-600 hover:underline">X Delete</button>
+            </div>
+            <article class="prose max-w-full">
+                {!! \Illuminate\Support\Str::markdown($currentNode->document->content) !!}
+            </article>
+        @elseif ($currentNode && $currentNode->type === 'folder')
+            <div class="space-y-2">
+                <h2 class="text-xl font-semibold mb-4">Contents of "{{ $currentNode->title }}"</h2>
+                <ul>
+                    @foreach ($children as $child)
+                        <li>
+                            <a class="text-blue-600 hover:underline" href="{{ route('docs', [
+                                'sectionSlug' => urlencode($version->section->slug),
+                                'version' => $version->version_number,
+                                'docPath' => $child->path,
+                            ]) }}">
+                                @if ($child->type === 'folder') > @else # @endif
+                                {{ $child->title }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @else
+            <p class="text-gray-500 italic">Select a document to begin.</p>
+        @endif
     @endif
-
 @endsection
 
 @if ($currentNode && $currentNode->type === 'document')
