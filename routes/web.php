@@ -66,6 +66,59 @@ Route::get('/{sectionSlug}/{version}/{docPath}/edit', function ($sectionSlug, $v
     ]);
 })->where('docPath', '.*')->name('docs.edit');
 
+Route::get('/{sectionSlug}/{version}/{docPath}/download', function ($sectionSlug, $version, $docPath) {
+    $section = \App\Models\Section::where('slug', urldecode($sectionSlug))->firstOrFail();
+    $version = $section->versions()->where('version_number', $version)->firstOrFail();
+    
+    $docPath = trim($docPath, '/');
+    $node = $version->nodes()->with('document')->where('path', $docPath)->firstOrFail();
+    
+    abort_unless($node->type === 'document' && $node->document, 404);
+    
+    $filename = $node->slug . '.md';
+    $content = $node->document->content;
+    
+    return Response::make($content, 200, [
+        'Content-Type' => 'text/markdown',
+        'Content-Disposition' => "attachment; filename=\"$filename\""
+    ]);
+})->where('docPath', '.*')->name('docs.download');
+
+Route::post('/create-node', function (Illuminate\Http\Request $request) {
+    $validated = $request->validate([
+        'version_id' => 'required|exists:versions,id',
+        'parent_id' => 'required|exists:nodes,id',
+        'type' => 'required|in:folder,document',
+        'title' => 'required|string|max:255',
+    ]);
+
+    $parent = \App\Models\Node::find($validated['parent_id']);
+    $slug = \Illuminate\Support\Str::slug($validated['title']);
+    $path = "{$parent->path}/{$slug}";
+
+    $node = \App\Models\Node::create([
+        'version_id' => $validated['version_id'],
+        'parent_id' => $validated['parent_id'],
+        'title' => $validated['title'],
+        'slug' => $slug,
+        'path' => $path,
+        'type' => $validated['type'],
+    ]);
+
+    if ($node->type === 'document') {
+        \App\Models\Document::create([
+            'node_id' => $node->id,
+            'content' => "# {$node->title}\n\nWrite your content here.",
+        ]);
+    }
+
+    return redirect()->route('docs', [
+        'sectionSlug' => $node->version->section->slug,
+        'version' => $node->version->version_number,
+        'docPath' => $node->path,
+    ]);
+})->name('docs.store');
+
 Route::get('/{sectionSlug}/{version}/{docPath?}', function ($sectionSlug, $version, $docPath = null) {
     $section = \App\Models\Section::where('slug', urldecode($sectionSlug))->firstOrFail();
     $version = $section->versions()->where('version_number', $version)->firstOrFail();

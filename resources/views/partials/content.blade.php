@@ -8,7 +8,13 @@
                 'version' => $version->version_number,
                 'docPath' => $currentNode->path
             ]) }}"
-            class="text-sm text-blue-600 hover:underline">✏️ Edit</a>
+            class="text-xl text-blue-600 hover:underline">Edit</a>
+            <a href="{{ route('docs.download', [
+                'sectionSlug' => $section->slug,
+                'version' => $version->version_number,
+                'docPath' => $currentNode->path
+            ]) }}"
+            class="text-xl text-grey-600 hover:underline">Download ⤓</a>
         </div>
         <article class="prose max-w-full">
             {!! \Illuminate\Support\Str::markdown($currentNode->document->content) !!}
