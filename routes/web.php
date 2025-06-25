@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\Section;
+use App\Models\Node;
 
 function buildTree($nodes, $parentId = null, $depth = 0)
 {
@@ -118,6 +119,22 @@ Route::post('/create-node', function (Illuminate\Http\Request $request) {
         'docPath' => $node->path,
     ]);
 })->name('docs.store');
+
+Route::delete('/node/{node}', function (Node $node) {
+    abort_unless($node->type === 'document', 403); // optional: only allow deleting documents
+    $version = $node->version;
+    $section = $version->section;
+
+    $node->delete();
+    if ($node->document) {
+        $node->document->delete();
+    }
+
+    return redirect()->route('docs', [
+        'sectionSlug' => $section->slug,
+        'version' => $version->version_number,
+    ])->with('status', 'Entry deleted.');
+})->name('docs.destroy');
 
 Route::get('/{sectionSlug}/{version}/{docPath?}', function ($sectionSlug, $version, $docPath = null) {
     $section = \App\Models\Section::where('slug', urldecode($sectionSlug))->firstOrFail();
