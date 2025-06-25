@@ -23,4 +23,15 @@ class Section extends Model
     public function isGroup() {
         return $this->children()->exists();
     }
+
+    public function getPathAttribute() {
+        $slugs = [];
+        $current = $this;
+        while ($current) {
+            array_unshift($slugs, $current->slug);
+            $current = $current->parent;
+        }
+        return implode('/', $slugs);
+    }
+
 }

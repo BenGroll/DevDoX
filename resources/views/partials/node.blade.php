@@ -1,9 +1,9 @@
 <li class="mb-1 ml-{{ $node->depth * 4 }}">
     <a href="{{ route('docs', [
-        'section' => $node->version->section->slug,
+        'sectionPath' => $node->version->section->path,
         'version' => $node->version->version_number,
         'any' => $node->path
-    ]) }}"
+        ]) }}"
        class="block px-2 py-1 rounded hover:bg-gray-200 transition
               @if (isset($currentNode) && $currentNode->id === $node->id) bg-blue-100 font-semibold @endif">
         @if ($node->type === 'folder') 📁 @else 📄 @endif

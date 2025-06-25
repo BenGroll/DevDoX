@@ -87,7 +87,7 @@
 
         let sectionSlug = parent;
         if (isGroup) {
-            sectionSlug = childSelect.value;
+            sectionSlug += '/' + childSelect.value;
         }
 
         const version = versionSelect.value;
@@ -96,4 +96,5 @@
             window.location.href = newUrl;
         }
     }
+
 </script>
