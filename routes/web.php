@@ -14,35 +14,33 @@ function buildTree($nodes, $parentId = null, $depth = 0)
         });
 }
 
-Route::get('/{sectionPath}/{version}/{any?}', function ($sectionPath, $version, $any = null) {
-    $sectionSlugs = explode('/', $sectionPath);
+Route::get('/{sectionSlug}/{version}/{docPath?}', function ($sectionSlug, $version, $docPath = null) {
+    // Decode the slug (just in case) and replace tilde with bracketed style if needed
+    $sectionSlug = urldecode($sectionSlug);
 
-    // Traverse slugs to get the final section
-    $parent = null;
-    foreach ($sectionSlugs as $slug) {
-        $query = \App\Models\Section::where('slug', $slug);
-        if ($parent) {
-            $query->where('parent_id', $parent->id);
-        } else {
-            $query->whereNull('parent_id');
-        }
-        $parent = $query->firstOrFail();
-    }
-    $section = $parent;
+    // Match real section by slug (e.g. 'plugins~statistics' becomes slug 'plugins~statistics')
+    $section = \App\Models\Section::where('slug', $sectionSlug)->firstOrFail();
+
+    $version = $section->versions()->where('version_number', $version)->firstOrFail();
 
     $sections = \App\Models\Section::with(['children.versions', 'versions'])->whereNull('parent_id')->get();
-    $version = $section->versions()->where('version_number', $version)->firstOrFail();
     $allNodes = $version->nodes()->with('children', 'document', 'version.section')->get();
     $tree = buildTree($allNodes);
 
-    $currentNode = $any
-        ? $version->nodes()->with('document')->where('path', $any)->first()
+    $docPath = trim($docPath ?? '', '/');
+    $currentNode = $docPath
+        ? $version->nodes()->with('document')->where('path', $docPath)->first()
         : null;
 
+    $children = collect();
+    if ($currentNode && $currentNode->type === 'folder') {
+        $children = $currentNode->children()->orderBy('order')->get();
+    }
+
     return view('layouts.app', compact(
-        'section', 'sections', 'version', 'tree', 'currentNode'
+        'section', 'sections', 'version', 'tree', 'currentNode', 'children'
     ));
-})->where('sectionPath', '.*')->where('any', '.*')->name('docs');
+})->where('docPath', '.*')->name('docs');
 
 // Fallback for home or redirect
 Route::get('/', function () {

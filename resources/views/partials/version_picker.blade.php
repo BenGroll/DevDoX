@@ -4,16 +4,19 @@
         @foreach ($sections as $sec)
             <option value="{{ $sec->slug }}"
                 data-is-group="{{ $sec->children->isNotEmpty() ? '1' : '0' }}"
-                data-children='@json($sec->children->mapWithKeys(fn($c) => [$c->slug => $c->versions->pluck("version_number")]))'
+                data-children='@json($sec->children->map(fn($c) => [
+                    'slug' => $c->slug,
+                    'name' => $c->name,
+                    'versions' => $c->versions->pluck("version_number")
+                ]))'
                 data-versions='@json($sec->versions->pluck("version_number"))'
                 @selected($sec->id === $section->id || optional($section->parent)->id === $sec->id)>
                 {{ $sec->name }}
             </option>
-
         @endforeach
     </select>
 
-    <!-- Child Section Dropdown (for plugins) -->
+    <!-- Plugin Name Dropdown -->
     <select id="child-select" class="text-sm border rounded px-2 py-1 hidden"></select>
 
     <!-- Version Dropdown -->
@@ -24,36 +27,35 @@
         Go
     </button>
 </div>
-
 <script>
 const sectionSelect = document.getElementById('section-select');
 const childSelect = document.getElementById('child-select');
 const versionSelect = document.getElementById('version-select');
 
-// Initial load
-updateVersionSelector(true);
+updatePicker(true);
 
-sectionSelect.addEventListener('change', updateVersionSelector);
+sectionSelect.addEventListener('change', () => updatePicker(false));
 childSelect.addEventListener('change', updateVersionList);
 
-function updateVersionSelector(initial = false) {
+function updatePicker(initial = false) {
     const selected = sectionSelect.options[sectionSelect.selectedIndex];
     const isGroup = selected.dataset.isGroup === '1';
 
+    childSelect.classList.toggle('hidden', !isGroup);
     versionSelect.innerHTML = '';
     childSelect.innerHTML = '';
-    childSelect.classList.toggle('hidden', !isGroup);
 
     if (isGroup) {
-        const children = JSON.parse(selected.dataset.children || '{}');
+        const children = JSON.parse(selected.dataset.children || '[]');
         const currentSlug = "{{ $section->slug }}";
         const currentVersion = "{{ $version->version_number }}";
 
-        Object.keys(children).forEach(slug => {
+        children.forEach(child => {
             const option = document.createElement('option');
-            option.value = slug;
-            option.textContent = slug;
-            if (initial && slug === currentSlug) option.selected = true;
+            option.value = child.slug;
+            option.textContent = child.name;
+            if (initial && child.slug === currentSlug) option.selected = true;
+            option.dataset.versions = JSON.stringify(child.versions);
             childSelect.appendChild(option);
         });
 
@@ -72,37 +74,34 @@ function updateVersionSelector(initial = false) {
     }
 }
 
-    function updateVersionList(selectedVersion = null) {
-        const parent = sectionSelect.options[sectionSelect.selectedIndex];
-        const children = JSON.parse(parent.dataset.children || '{}');
-        const selectedChild = childSelect.value;
+function updateVersionList(selectedVersion = null) {
+    const selectedChild = childSelect.options[childSelect.selectedIndex];
+    const versions = JSON.parse(selectedChild.dataset.versions || '[]');
 
-        const versions = children[selectedChild] || [];
-        versionSelect.innerHTML = '';
-        versions.forEach(v => {
-            const option = document.createElement('option');
-            option.value = v;
-            option.textContent = v;
-            if (v === selectedVersion) option.selected = true;
-            versionSelect.appendChild(option);
-        });
+    versionSelect.innerHTML = '';
+    versions.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v;
+        option.textContent = v;
+        if (v === selectedVersion) option.selected = true;
+        versionSelect.appendChild(option);
+    });
+}
+
+function goToSelected() {
+    const parent = sectionSelect.options[sectionSelect.selectedIndex];
+    const isGroup = parent.dataset.isGroup === '1';
+    const version = versionSelect.value;
+
+    let sectionSlug = parent.value;
+
+    if (isGroup) {
+        const pluginSlug = childSelect.value;
+        sectionSlug = `${sectionSlug}~${pluginSlug}`; // Combine e.g. plugins[statistics]
     }
 
-    function goToSelected() {
-        const parent = sectionSelect.value;
-        const selected = sectionSelect.options[sectionSelect.selectedIndex];
-        const isGroup = selected.dataset.isGroup === '1';
-
-        let sectionSlug = parent;
-        if (isGroup) {
-            sectionSlug += '/' + childSelect.value;
-        }
-
-        const version = versionSelect.value;
-        if (sectionSlug && version) {
-            const newUrl = `/${sectionSlug}/${version}`;
-            window.location.href = newUrl;
-        }
+    if (sectionSlug && version) {
+        window.location.href = `/${sectionSlug}/${version}`;
     }
-
+}
 </script>

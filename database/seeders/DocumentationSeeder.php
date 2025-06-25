@@ -92,7 +92,7 @@ class DocumentationSeeder extends Seeder
                 foreach ($content as $pluginName => $pluginVersions) {
                     $plugin = Section::create([
                         'name' => $pluginName,
-                        'slug' => Str::slug($pluginName),
+                        'slug' => Str::slug($sectionName) . '~' . Str::slug($pluginName),
                         'parent_id' => $section->id,
                     ]);
 
