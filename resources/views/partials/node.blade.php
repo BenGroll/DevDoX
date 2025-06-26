@@ -13,8 +13,8 @@
 
         @if ($node->type === 'folder')
             <div class="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                <button onclick="showQuickAdd('{{ $node->id }}', 'document')" class="text-base text-blue-500 hover:text-blue-700">>+</button>
-                <button onclick="showQuickAdd('{{ $node->id }}', 'folder')" class="text-base text-green-600 hover:text-green-800">#+</button>
+                <button onclick="showQuickAdd('{{ $node->id }}', 'document')" class="text-base text-blue-500 hover:text-blue-700">(+#)</button>
+                <button onclick="showQuickAdd('{{ $node->id }}', 'folder')" class="text-base text-green-600 hover:text-green-800">(+>)</button>
             </div>
         @endif
     </div>
